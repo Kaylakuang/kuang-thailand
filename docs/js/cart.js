@@ -2,7 +2,7 @@ import {
   LOYALTY_SETTINGS,
   SHIPPING_SETTINGS,
   PROMOTION_SETTINGS
-} from "./settings.js?v=202607242329";
+} from "./settings.js?v=202607252330";
 import {
   $,
   escapeHTML,
@@ -106,18 +106,17 @@ export function getMaxRedeemablePoints(productAmount) {
   return Math.floor(amount / 500) * 100;
 }
 
+export function getManualGiftQuantity(item = {}) {
+  const promotionText = String(item.promotionText || "");
+  const promotion = PROMOTION_SETTINGS.buyXGetY;
+  if (!promotion.enabled || !promotionText.includes(promotion.label)) return 0;
+  const purchasedQuantity = Math.max(0, Math.floor(Number(item.quantity) || 0));
+  return Math.floor(purchasedQuantity / promotion.buy) * promotion.get;
+}
+
 export function calculateCartTotals(items = getCartItems(), options = {}) {
   const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
-  let discount = 0;
-
-  if (PROMOTION_SETTINGS.buyXGetY.enabled) {
-    const groupSize = PROMOTION_SETTINGS.buyXGetY.buy + PROMOTION_SETTINGS.buyXGetY.get;
-    discount = items.reduce((sum, item) => {
-      const freeQty = Math.floor(Number(item.quantity || 0) / groupSize) * PROMOTION_SETTINGS.buyXGetY.get;
-      return sum + freeQty * Number(item.price || 0);
-    }, 0);
-  }
-
+  const discount = 0;
   const afterDiscount = Math.max(subtotal - discount, 0);
   const shippingFee = afterDiscount >= SHIPPING_SETTINGS.freeShippingThreshold || afterDiscount === 0
     ? 0
@@ -171,25 +170,29 @@ function renderCartItems(items) {
     `;
   }
 
-  return items.map((item) => `
-    <article class="cart-item" data-cart-item="${escapeHTML(item.id)}">
-      <img src="${escapeHTML(item.image || "assets/product-placeholder.svg")}" alt="${escapeHTML(item.name)}" onerror="this.src='assets/product-placeholder.svg'">
-      <div>
-        <h3>${escapeHTML(item.name)}</h3>
-        <p class="muted">${escapeHTML(item.spec || item.category || "")}</p>
-        <p class="price">${formatCurrency(item.price)} <span class="muted">x ${item.quantity}</span></p>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px">
-          <div class="quantity-control" aria-label="${escapeHTML(item.name)} 數量">
-            <button type="button" data-cart-decrease="${escapeHTML(item.id)}" aria-label="減少數量">-</button>
-            <span>${item.quantity}</span>
-            <button type="button" data-cart-increase="${escapeHTML(item.id)}" aria-label="增加數量">+</button>
+  return items.map((item) => {
+    const giftQuantity = getManualGiftQuantity(item);
+    return `
+      <article class="cart-item" data-cart-item="${escapeHTML(item.id)}">
+        <img src="${escapeHTML(item.image || "assets/product-placeholder.svg")}" alt="${escapeHTML(item.name)}" onerror="this.src='assets/product-placeholder.svg'">
+        <div>
+          <h3>${escapeHTML(item.name)}</h3>
+          <p class="muted">${escapeHTML(item.spec || item.category || "")}</p>
+          <p class="price">${formatCurrency(item.price)} <span class="muted">x ${item.quantity}</span></p>
+          ${giftQuantity > 0 ? `<p class="muted">🎁 符合買五送一，出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px">
+            <div class="quantity-control" aria-label="${escapeHTML(item.name)} 數量">
+              <button type="button" data-cart-decrease="${escapeHTML(item.id)}" aria-label="減少數量">-</button>
+              <span>${item.quantity}</span>
+              <button type="button" data-cart-increase="${escapeHTML(item.id)}" aria-label="增加數量">+</button>
+            </div>
+            <button class="btn btn--ghost btn--small" type="button" data-cart-remove="${escapeHTML(item.id)}">刪除</button>
+            <strong style="margin-left:auto">${formatCurrency(item.price * item.quantity)}</strong>
           </div>
-          <button class="btn btn--ghost btn--small" type="button" data-cart-remove="${escapeHTML(item.id)}">刪除</button>
-          <strong style="margin-left:auto">${formatCurrency(item.price * item.quantity)}</strong>
         </div>
-      </div>
-    </article>
-  `).join("");
+      </article>
+    `;
+  }).join("");
 }
 
 export function initCartPage() {
