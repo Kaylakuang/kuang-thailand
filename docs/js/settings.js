@@ -32,7 +32,7 @@ export const PAYMENT_SETTINGS = {
 
 export const SHIPPING_SETTINGS = {
   freeShippingThreshold: 3000,
-  defaultShippingFee: 65,
+  defaultShippingFee: 49,
   freeShippingText: "滿 NT$3,000 免運"
 };
 
