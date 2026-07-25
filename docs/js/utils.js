@@ -39,7 +39,7 @@ export function toTime(value) {
 
 export function formatDateTime(value) {
   const date = toDate(value);
-  if (!date) return "尚未紀錄";
+  if (!date) return "撠𡁏𧊋蝝���";
   return new Intl.DateTimeFormat("zh-TW", {
     year: "numeric",
     month: "2-digit",
@@ -96,10 +96,10 @@ export function normalizeProduct(product = {}, index = 0) {
   return {
     id,
     docId: product.docId || id,
-    name: product.name || "未命名商品",
+    name: product.name || "�芸𦶢�滚���",
     image,
     images,
-    category: product.category || "熱銷商品",
+    category: product.category || "�梢啹���",
     description: product.description || "",
     price: Number(product.price) || 0,
     originalPrice: Number(product.originalPrice) || 0,
@@ -111,7 +111,7 @@ export function normalizeProduct(product = {}, index = 0) {
     deadline: product.deadline || "",
     limitPerUser: Number(product.limitPerUser || 0),
     promotionText: product.promotionText || "",
-    status: product.status || "開放下單",
+    status: product.status || "�𧢲𦆮銝见鱓",
     createdAt: product.createdAt || "",
     updatedAt: product.updatedAt || ""
   };
@@ -119,7 +119,7 @@ export function normalizeProduct(product = {}, index = 0) {
 
 export async function fetchSampleProducts() {
   const response = await fetch("data/sample-products.json", { cache: "no-store" });
-  if (!response.ok) throw new Error("無法讀取範例商品資料");
+  if (!response.ok) throw new Error("�⊥�霈��𣇉�靘见������");
   const data = await response.json();
   return data.map(normalizeProduct);
 }
@@ -131,7 +131,7 @@ export function getProductImage(product) {
 export function productIsAvailable(product) {
   return product?.isActive
     && product?.stock !== 0
-    && !["已截止", "暫停接單", "已售完"].includes(product?.status);
+    && !["撌脫⏛甇�", "�怠��亙鱓", "撌脣睸摰�"].includes(product?.status);
 }
 
 export function slugify(value = "") {
@@ -158,21 +158,21 @@ export function showToast(message) {
 }
 
 export function renderStatusPill(label, extraClass = "") {
-  return `<span class="status-pill ${extraClass}">${escapeHTML(label || "未設定")}</span>`;
+  return `<span class="status-pill ${extraClass}">${escapeHTML(label || "�芾身摰�")}</span>`;
 }
 
 export function renderSummaryRows(totals) {
   const pointsDiscount = Number(totals.pointsDiscount || 0);
   const pointsEarned = Number(totals.pointsEarned || 0);
   return `
-    <div class="summary-row"><span>商品小計</span><strong>${formatCurrency(totals.subtotal)}</strong></div>
-    <div class="summary-row"><span>運費</span><strong>${formatCurrency(totals.shippingFee)}</strong></div>
-    <div class="summary-row"><span>優惠折扣</span><strong>-${formatCurrency(totals.discount)}</strong></div>
-    ${pointsDiscount > 0 ? `<div class="summary-row summary-row--points"><span>點數折抵</span><strong>-${formatCurrency(pointsDiscount)}</strong></div>` : ""}
-    <div class="summary-row summary-row--total"><span>訂單總金額</span><strong>${formatCurrency(totals.total)}</strong></div>
-    <div class="summary-row summary-row--deposit"><span>匯款訂金金額</span><strong>${formatCurrency(totals.depositAmount)}</strong></div>
-    <div class="summary-row"><span>尾款金額</span><strong>${formatCurrency(totals.remainingAmount)}</strong></div>
-    ${pointsEarned > 0 ? `<div class="summary-row summary-row--points"><span>本次預計累積</span><strong>${pointsEarned} 點</strong></div>` : ""}
+    <div class="summary-row"><span>���撠讛�</span><strong>${formatCurrency(totals.subtotal)}</strong></div>
+    <div class="summary-row"><span>�贝祥</span><strong>${formatCurrency(totals.shippingFee)}</strong></div>
+    <div class="summary-row"><span>�芣��䀹緍</span><strong>-${formatCurrency(totals.discount)}</strong></div>
+    ${pointsDiscount > 0 ? `<div class="summary-row summary-row--points"><span>暺墧彍�䀹𠽌</span><strong>-${formatCurrency(pointsDiscount)}</strong></div>` : ""}
+    <div class="summary-row summary-row--total"><span>閮�鱓蝮賡�憿�</span><strong>${formatCurrency(totals.total)}</strong></div>
+    <div class="summary-row summary-row--deposit"><span>�舀狡閮���煾�</span><strong>${formatCurrency(totals.depositAmount)}</strong></div>
+    <div class="summary-row"><span>撠暹狡�煾�</span><strong>${formatCurrency(totals.remainingAmount)}</strong></div>
+    ${pointsEarned > 0 ? `<div class="summary-row summary-row--points"><span>�祆活�鞱�蝝舐�</span><strong>${pointsEarned} 暺�</strong></div>` : ""}
   `;
 }
 
@@ -182,13 +182,13 @@ export function renderBankInfo(orderOrTotals = {}) {
   const deadline = orderOrTotals.paymentDeadline || orderOrTotals.paymentInfo?.paymentDeadline || "";
   return `
     <div class="summary-list">
-      <div class="summary-row"><span>銀行名稱</span><strong>${escapeHTML(BANK_INFO.bankName)}</strong></div>
-      <div class="summary-row"><span>銀行代碼</span><strong>${escapeHTML(BANK_INFO.bankCode)}</strong></div>
-      <div class="summary-row"><span>匯款帳號</span><strong>${escapeHTML(BANK_INFO.accountNumber)}</strong></div>
-      <div class="summary-row"><span>戶名</span><strong>${escapeHTML(BANK_INFO.accountName)}</strong></div>
-      <div class="summary-row"><span>訂單總金額</span><strong>${formatCurrency(total)}</strong></div>
-      <div class="summary-row summary-row--deposit"><span>匯款訂金金額</span><strong>${formatCurrency(deposit)}</strong></div>
-      <div class="summary-row"><span>付款期限</span><strong>${deadline ? escapeHTML(formatDateTime(deadline)) : `下單後 ${PAYMENT_SETTINGS.paymentDeadlineDays} 日內`}</strong></div>
+      <div class="summary-row"><span>��銵��蝔�</span><strong>${escapeHTML(BANK_INFO.bankName)}</strong></div>
+      <div class="summary-row"><span>��銵䔶誨蝣�</span><strong>${escapeHTML(BANK_INFO.bankCode)}</strong></div>
+      <div class="summary-row"><span>�舀狡撣唾�</span><strong>${escapeHTML(BANK_INFO.accountNumber)}</strong></div>
+      <div class="summary-row"><span>�嗅�</span><strong>${escapeHTML(BANK_INFO.accountName)}</strong></div>
+      <div class="summary-row"><span>閮�鱓蝮賡�憿�</span><strong>${formatCurrency(total)}</strong></div>
+      <div class="summary-row summary-row--deposit"><span>�舀狡閮���煾�</span><strong>${formatCurrency(deposit)}</strong></div>
+      <div class="summary-row"><span>隞䀹狡�罸�</span><strong>${deadline ? escapeHTML(formatDateTime(deadline)) : `銝见鱓敺� ${PAYMENT_SETTINGS.paymentDeadlineDays} �亙�`}</strong></div>
     </div>
   `;
 }
@@ -205,43 +205,43 @@ export function renderSiteHeader(active = "") {
   }
 
   const navItems = [
-    ["首頁", "index.html", "home"],
-    ["全部商品", "products.html", "products"],
-    ["最新商品", "products.html?sort=latest", "latest"],
-    ["我的訂單", "my-orders.html", "orders"],
-    ["登入／註冊", "login.html", "auth"],
-    ["購物車", "cart.html", "cart"]
+    ["擐㚚�", "index.html", "home"],
+    ["�券����", "products.html", "products"],
+    ["���啣���", "products.html?sort=latest", "latest"],
+    ["�𤑳�閮�鱓", "my-orders.html", "orders"],
+    ["�餃�嚗讛酉��", "login.html", "auth"],
+    ["鞈潛�頠�", "cart.html", "cart"]
   ];
 
   header.innerHTML = `
     <div class="announcement">
       <div class="announcement__inner">
         <span>${escapeHTML(SHIPPING_SETTINGS.freeShippingText)}</span>
-        <span>付款方式：LINE Pay｜銀行匯款</span>
-        <span>客服時間：${escapeHTML(CONTACT_INFO.serviceHours)}</span>
+        <span>隞䀹狡�孵�嚗匁INE Pay嚚𣈯�銵�𥲤甈�</span>
+        <span>摰Ｘ����嚗�${escapeHTML(CONTACT_INFO.serviceHours)}</span>
       </div>
     </div>
     <header class="site-header">
-      <nav class="nav" aria-label="主導覽">
-        <a href="index.html" class="brand" aria-label="${SITE_NAME} 首頁">${SITE_NAME}<span>KUANG SERVICE</span></a>
+      <nav class="nav" aria-label="銝餃�閬�">
+        <a href="index.html" class="brand" aria-label="${SITE_NAME} 擐㚚�">${SITE_NAME}<span>KUANG SERVICE</span></a>
         <div class="nav__links" id="primary-nav">
           ${navItems.map(([label, href, key]) => `<a href="${href}" data-nav-key="${key}" class="${activeKey === key ? "is-active" : ""}">${label}</a>`).join("")}
         </div>
         <div class="nav__actions">
-          <a href="login.html" class="icon-button auth-icon-link" aria-label="會員登入">
+          <a href="login.html" class="icon-button auth-icon-link" aria-label="��摱�餃�">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="8" r="3.4" fill="none"></circle>
               <path d="M5.8 20c1.05-4.2 3.25-6.3 6.2-6.3s5.15 2.1 6.2 6.3" fill="none"></path>
             </svg>
           </a>
-          <a href="cart.html" class="cart-link" aria-label="購物車">
+          <a href="cart.html" class="cart-link" aria-label="鞈潛�頠�">
             <svg class="nav-icon nav-icon--bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M7.3 9.4h9.4l-.7 9.7H8L7.3 9.4Z" fill="none"></path>
               <path d="M9.4 9.4V7.6a2.6 2.6 0 0 1 5.2 0v1.8" fill="none"></path>
             </svg>
             <span class="cart-count" data-cart-count>0</span>
           </a>
-          <button class="menu-button" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="primary-nav"><span></span></button>
+          <button class="menu-button" type="button" aria-label="�见��詨鱓" aria-expanded="false" aria-controls="primary-nav"><span></span></button>
         </div>
       </nav>
     </header>
@@ -258,33 +258,33 @@ export function renderSiteFooter() {
         <div class="footer__main">
           <div class="footer__brand">
             <h2>${SITE_NAME}</h2>
-            <p class="muted">泰國現地採買與品牌好物代購。</p>
-            <p class="muted">來源清楚，價格透明，品質用心把關。</p>
+            <p class="muted">瘜啣��曉𧑐�∟眺�����末�拐誨鞈潦��</p>
+            <p class="muted">靘��皜��嚗���潮�𤩺�嚗��鞈芰鍂敹���栶��</p>
           </div>
           <div class="footer__col">
-            <h3>商品分類</h3>
+            <h3>������</h3>
             ${PRODUCT_CATEGORIES.map((category) => `<a href="products.html?category=${encodeURIComponent(category)}">${escapeHTML(category)}</a>`).join("")}
           </div>
           <div class="footer__col">
-            <h3>付款與運送</h3>
+            <h3>隞䀹狡�����</h3>
             <span>LINE Pay</span>
-            <span>銀行匯款</span>
-            <span>店到店／面交／宅配</span>
-            <span>滿 NT$3,000 免運</span>
+            <span>��銵�𥲤甈�</span>
+            <span>摨堒�摨梹��Ｖ漱嚗誩���</span>
+            <span>皛� NT$3,000 �漤�</span>
           </div>
           <div class="footer__col footer__social-col">
-            <div class="social-links social-links--footer" aria-label="社群連結">
-              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.lineUrl)}" target="_blank" rel="noopener" aria-label="加入 LINE"><img src="assets/icon-line.svg" alt=""></a>
-              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.instagramUrl)}" target="_blank" rel="noopener" aria-label="前往 Instagram"><img src="assets/icon-instagram.svg" alt=""></a>
-              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.facebookUrl)}" target="_blank" rel="noopener" aria-label="前往 Facebook"><img src="assets/icon-facebook.svg" alt=""></a>
-              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.threadsUrl)}" target="_blank" rel="noopener" aria-label="前往 Threads"><img src="assets/icon-threads.svg" alt=""></a>
+            <div class="social-links social-links--footer" aria-label="蝷曄黎���">
+              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.lineUrl)}" target="_blank" rel="noopener" aria-label="�惩� LINE"><img src="assets/icon-line.svg" alt=""></a>
+              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.instagramUrl)}" target="_blank" rel="noopener" aria-label="�滚� Instagram"><img src="assets/icon-instagram.svg" alt=""></a>
+              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.facebookUrl)}" target="_blank" rel="noopener" aria-label="�滚� Facebook"><img src="assets/icon-facebook.svg" alt=""></a>
+              <a class="social-link social-link--small" href="${escapeHTML(CONTACT_INFO.threadsUrl)}" target="_blank" rel="noopener" aria-label="�滚� Threads"><img src="assets/icon-threads.svg" alt=""></a>
             </div>
-            <a class="footer-email" href="mailto:${escapeHTML(CONTACT_INFO.email)}">Email：${escapeHTML(CONTACT_INFO.email)}</a>
+            <a class="footer-email" href="mailto:${escapeHTML(CONTACT_INFO.email)}">Email嚗�${escapeHTML(CONTACT_INFO.email)}</a>
           </div>
         </div>
         <div class="footer__bottom">
-          <span>© <span data-current-year></span> ${SITE_NAME}. All rights reserved.</span>
-          <span>Terms of Service ｜ Privacy Policy</span>
+          <span>穢 <span data-current-year></span> ${SITE_NAME}. All rights reserved.</span>
+          <span>Terms of Service 嚚� Privacy Policy</span>
         </div>
       </div>
     </footer>
@@ -297,9 +297,36 @@ export function bindMobileMenu() {
   const button = $(".menu-button");
   const nav = $("#primary-nav");
   if (!button || !nav) return;
-  button.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("is-open");
+
+  const closeMenu = () => {
+    nav.classList.remove("is-open");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-label", "�见��詨鱓");
+  };
+
+  button.onclick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const isOpen = !nav.classList.contains("is-open");
+    nav.classList.toggle("is-open", isOpen);
     button.setAttribute("aria-expanded", String(isOpen));
+    button.setAttribute("aria-label", isOpen ? "�𣈯��詨鱓" : "�见��詨鱓");
+  };
+
+  nav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) closeMenu();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!nav.contains(event.target) && !button.contains(event.target)) closeMenu();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMenu();
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 980) closeMenu();
   });
 }
 
@@ -314,6 +341,6 @@ export function initHeroImageFallback() {
 
 export function requireElement(selector) {
   const element = $(selector);
-  if (!element) throw new Error(`找不到頁面元素：${selector}`);
+  if (!element) throw new Error(`�曆��圈��Ｗ�蝝𩤃�${selector}`);
   return element;
 }
