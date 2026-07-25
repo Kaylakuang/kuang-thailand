@@ -37,8 +37,9 @@ import {
 
 let adminProducts = [];
 let adminOrders = [];
-const ADMIN_IMAGE_MAX_SIZE = 720;
-const ADMIN_IMAGE_QUALITY = 0.72;
+const ADMIN_IMAGE_MAX_SIZE = 900;
+const ADMIN_IMAGE_QUALITY = 0.75;
+const ADMIN_IMAGE_TARGET_BYTES = 550 * 1024;
 const ADMIN_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 export async function initAdminPage() {
@@ -231,14 +232,37 @@ async function compressImageFile(file) {
   const source = await readAsDataUrl(file);
   const image = await loadImage(source);
   const scale = Math.min(1, ADMIN_IMAGE_MAX_SIZE / Math.max(image.width, image.height));
-  const canvas = document.createElement("canvas");
+  let canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(image.width * scale));
   canvas.height = Math.max(1, Math.round(image.height * scale));
-  const context = canvas.getContext("2d");
+  let context = canvas.getContext("2d");
   context.fillStyle = "#fffaf3";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", ADMIN_IMAGE_QUALITY));
+
+  let quality = ADMIN_IMAGE_QUALITY;
+  let blob = null;
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+    if (!blob || blob.size <= ADMIN_IMAGE_TARGET_BYTES) break;
+
+    if (quality > 0.5) {
+      quality = Math.max(0.5, quality - 0.06);
+      continue;
+    }
+
+    const resized = document.createElement("canvas");
+    resized.width = Math.max(1, Math.round(canvas.width * 0.82));
+    resized.height = Math.max(1, Math.round(canvas.height * 0.82));
+    const resizedContext = resized.getContext("2d");
+    resizedContext.fillStyle = "#fffaf3";
+    resizedContext.fillRect(0, 0, resized.width, resized.height);
+    resizedContext.drawImage(canvas, 0, 0, resized.width, resized.height);
+    canvas = resized;
+    quality = 0.68;
+  }
+
   if (!blob) throw new Error("瀏覽器無法壓縮圖片");
   if (blob.size > ADMIN_IMAGE_MAX_BYTES) throw new Error("壓縮後圖片仍超過 5 MB");
   return blob;
