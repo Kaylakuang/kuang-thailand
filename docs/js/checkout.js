@@ -30,7 +30,7 @@ import {
   clearCart,
   getCartItems,
   renderCartSummary
-} from "./cart.js?v=202607242329";
+} from "./cart.js?v=202607251345";
 
 const CHECKOUT_PROFILE_CACHE_KEY = "kt-checkout-profile";
 const CHECKOUT_DRAFT_KEY = "kt-checkout-draft";
@@ -408,8 +408,8 @@ function getCheckoutTotals(items, availablePoints) {
   const input = $("#redeem-points");
   const requested = Math.max(0, Math.floor(Number(input?.value || 0)));
   const baseTotals = calculateCartTotals(items);
-  const maxByTotal = Math.floor(baseTotals.total / LOYALTY_SETTINGS.pointValue);
-  const pointsRedeemed = Math.min(requested, availablePoints, maxByTotal);
+  const maxByOrder = Math.max(0, Number(baseTotals.maxRedeemablePoints || 0));
+  const pointsRedeemed = Math.min(requested, availablePoints, maxByOrder);
   if (input && Number(input.value || 0) !== pointsRedeemed) {
     input.value = String(pointsRedeemed);
   }
@@ -420,8 +420,12 @@ function renderLoyaltyPanel(target, availablePoints) {
   if (!target) return;
   target.innerHTML = `
     <div class="loyalty-strip__item">
-      <span>可用</span>
+      <span>持有</span>
       <strong data-points-available>${availablePoints} 點</strong>
+    </div>
+    <div class="loyalty-strip__item">
+      <span>本單最多</span>
+      <strong data-points-max>0 點</strong>
     </div>
     <div class="loyalty-strip__item">
       <span>預計累積</span>
@@ -436,9 +440,21 @@ function renderLoyaltyPanel(target, availablePoints) {
 
 function updateLoyaltyPanel(totals, availablePoints) {
   const available = $("[data-points-available]");
+  const maximum = $("[data-points-max]");
   const earned = $("[data-points-earned]");
-  if (available) available.textContent = `${Math.max(availablePoints - Number(totals.pointsRedeemed || 0), 0)} 點`;
+  const input = $("#redeem-points");
+  const usableMaximum = Math.min(
+    availablePoints,
+    Math.max(0, Number(totals.maxRedeemablePoints || 0))
+  );
+  if (available) available.textContent = `${availablePoints} 點`;
+  if (maximum) maximum.textContent = `${usableMaximum} 點`;
   if (earned) earned.textContent = `${Number(totals.pointsEarned || 0)} 點`;
+  if (input) {
+    input.max = String(usableMaximum);
+    input.disabled = usableMaximum <= 0;
+    input.title = "商品滿 NT$100 未滿 NT$500 最多使用 50 點；每滿 NT$500 最多使用 100 點，運費不折抵。";
+  }
 }
 
 function showPaymentModal(order) {
