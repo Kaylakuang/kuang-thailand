@@ -468,6 +468,23 @@ function bindOrderFilters() {
   });
 }
 
+function getAdminGiftQuantity(item = {}) {
+  return Math.max(0, Math.floor(Number(item.giftQuantity) || 0));
+}
+
+function renderAdminOrderItems(items = []) {
+  if (!items.length) return '<span class="muted">沒有商品</span>';
+  return items.map((item) => {
+    const giftQuantity = getAdminGiftQuantity(item);
+    return `
+      <div>
+        ${escapeHTML(item.name)} × ${Number(item.quantity || 0)}
+        ${giftQuantity > 0 ? `<br><strong>🎁 出貨加贈 ${giftQuantity} 件</strong>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
 function renderAdminOrders() {
   const root = $("#admin-orders-table");
   if (!root) return;
@@ -488,6 +505,7 @@ function renderAdminOrders() {
         <tr>
           <th>訂單</th>
           <th>客戶</th>
+          <th>商品／贈品</th>
           <th>金額</th>
           <th>付款狀態</th>
           <th>訂單狀態</th>
@@ -500,6 +518,7 @@ function renderAdminOrders() {
           <tr data-admin-order="${escapeHTML(order.orderId)}">
             <td><strong>${escapeHTML(order.orderId)}</strong><br><span class="muted">${formatDateTime(order.createdAt)}</span></td>
             <td>${escapeHTML(order.customerInfo?.name || "")}<br><span class="muted">${escapeHTML(order.customerInfo?.phone || "")}</span></td>
+            <td>${renderAdminOrderItems(order.items)}</td>
             <td>
               ${formatCurrency(order.total)}<br>
               <span class="muted">訂金 ${formatCurrency(order.depositAmount)}</span>
@@ -580,12 +599,17 @@ function renderAdminOrders() {
 function bindCsvExport() {
   $("#export-orders")?.addEventListener("click", () => {
     const rows = [
-      ["訂單編號", "下單時間", "客戶姓名", "手機", "付款方式", "付款狀態", "訂單狀態", "總金額", "訂金", "尾款", "物流單號"],
+      ["訂單編號", "下單時間", "客戶姓名", "手機", "商品明細", "贈品提醒", "付款方式", "付款狀態", "訂單狀態", "總金額", "訂金", "尾款", "物流單號"],
       ...adminOrders.map((order) => [
         order.orderId,
         formatDateTime(order.createdAt),
         order.customerInfo?.name || "",
         order.customerInfo?.phone || "",
+        (order.items || []).map((item) => `${item.name} × ${Number(item.quantity || 0)}`).join("、"),
+        (order.items || [])
+          .filter((item) => getAdminGiftQuantity(item) > 0)
+          .map((item) => `${item.name} 加贈 ${getAdminGiftQuantity(item)} 件`)
+          .join("、"),
         order.paymentMethod || "",
         order.paymentStatus || "",
         order.orderStatus || "",
