@@ -356,21 +356,29 @@ function renderOrderItems(items = []) {
   if (!items.length) return '<p class="muted">沒有商品明細。</p>';
   return `
     <div class="order-detail-items">
-      ${items.map((item) => `
-        <article class="order-detail-item">
-          <img class="order-detail-item__image" src="${escapeHTML(item.image || "assets/product-placeholder.svg")}" alt="${escapeHTML(item.name)}" onerror="this.src='assets/product-placeholder.svg'">
-          <div class="order-detail-item__main">
-            <h3>${escapeHTML(item.name)}</h3>
-            <p>${escapeHTML(item.spec || item.category || "")}</p>
-          </div>
-          <div class="order-detail-item__price">
-            <span>${formatCurrency(item.price)} x ${item.quantity}</span>
-            <strong>${formatCurrency(item.price * item.quantity)}</strong>
-          </div>
-        </article>
-      `).join("")}
+      ${items.map((item) => {
+        const giftQuantity = getOrderGiftQuantity(item);
+        return `
+          <article class="order-detail-item">
+            <img class="order-detail-item__image" src="${escapeHTML(item.image || "assets/product-placeholder.svg")}" alt="${escapeHTML(item.name)}" onerror="this.src='assets/product-placeholder.svg'">
+            <div class="order-detail-item__main">
+              <h3>${escapeHTML(item.name)}</h3>
+              <p>${escapeHTML(item.spec || item.category || "")}</p>
+              ${giftQuantity > 0 ? `<p>🎁 出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
+            </div>
+            <div class="order-detail-item__price">
+              <span>${formatCurrency(item.price)} x ${item.quantity}</span>
+              <strong>${formatCurrency(item.price * item.quantity)}</strong>
+            </div>
+          </article>
+        `;
+      }).join("")}
     </div>
   `;
+}
+
+function getOrderGiftQuantity(item = {}) {
+  return Math.max(0, Math.floor(Number(item.giftQuantity) || 0));
 }
 
 function renderItemsLine(items = []) {
@@ -379,15 +387,19 @@ function renderItemsLine(items = []) {
 
 function renderOrderItemRows(items = []) {
   if (!items.length) return '<p class="muted">沒有商品明細。</p>';
-  return items.map((item) => `
-    <div class="order-card__item">
-      <div>
-        <strong>${escapeHTML(item.name)}</strong>
-        <span>${escapeHTML(item.spec || item.category || "")}</span>
+  return items.map((item) => {
+    const giftQuantity = getOrderGiftQuantity(item);
+    return `
+      <div class="order-card__item">
+        <div>
+          <strong>${escapeHTML(item.name)}</strong>
+          <span>${escapeHTML(item.spec || item.category || "")}</span>
+          ${giftQuantity > 0 ? `<span>🎁 出貨加贈 ${giftQuantity} 件</span>` : ""}
+        </div>
+        <p>${formatCurrency(item.price)} x ${item.quantity}</p>
       </div>
-      <p>${formatCurrency(item.price)} x ${item.quantity}</p>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 function renderCompactTimeline(status) {
@@ -428,7 +440,7 @@ function buildPreviewOrder() {
   const deadline = new Date(now);
   deadline.setDate(deadline.getDate() + 3);
   deadline.setHours(23, 59, 0, 0);
-  const total = 1578;
+  const total = 1562;
   const depositAmount = Math.ceil(total * 0.5);
   return {
     orderId: "KT-20260724-483921",
@@ -446,7 +458,7 @@ function buildPreviewOrder() {
       { name: "Monster & Friends UFO", image: "assets/product-placeholder.svg", spec: "單入隨機款", price: 159, quantity: 1 }
     ],
     subtotal: 1513,
-    shippingFee: 65,
+    shippingFee: 49,
     discount: 0,
     total,
     depositRate: 0.5,
@@ -455,7 +467,7 @@ function buildPreviewOrder() {
     loyalty: {
       pointsRedeemed: 0,
       pointsDiscount: 0,
-      pointsEarned: 157
+      pointsEarned: 151
     },
     paymentMethod: "銀行匯款",
     paymentStatus: "待付訂金",
