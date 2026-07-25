@@ -99,6 +99,13 @@ export function removeCartItem(productId) {
   saveCartItems(getCartItems().filter((item) => item.id !== productId));
 }
 
+export function getMaxRedeemablePoints(productAmount) {
+  const amount = Math.max(0, Math.floor(Number(productAmount) || 0));
+  if (amount < 100) return 0;
+  if (amount < 500) return 50;
+  return Math.floor(amount / 500) * 100;
+}
+
 export function calculateCartTotals(items = getCartItems(), options = {}) {
   const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
   let discount = 0;
@@ -115,20 +122,28 @@ export function calculateCartTotals(items = getCartItems(), options = {}) {
   const shippingFee = afterDiscount >= SHIPPING_SETTINGS.freeShippingThreshold || afterDiscount === 0
     ? 0
     : SHIPPING_SETTINGS.defaultShippingFee;
-  const beforePointsTotal = afterDiscount + shippingFee;
+  const maxRedeemablePoints = LOYALTY_SETTINGS.enabled
+    ? getMaxRedeemablePoints(afterDiscount)
+    : 0;
   const requestedPoints = Math.max(0, Math.floor(Number(options.pointsRedeemed || 0)));
   const pointsRedeemed = LOYALTY_SETTINGS.enabled
-    ? Math.min(requestedPoints, Math.floor(beforePointsTotal / LOYALTY_SETTINGS.pointValue))
+    ? Math.min(
+        requestedPoints,
+        maxRedeemablePoints,
+        Math.floor(afterDiscount / LOYALTY_SETTINGS.pointValue)
+      )
     : 0;
   const pointsDiscount = pointsRedeemed * LOYALTY_SETTINGS.pointValue;
-  const total = Math.max(beforePointsTotal - pointsDiscount, 0);
+  const productTotalAfterPoints = Math.max(afterDiscount - pointsDiscount, 0);
+  const total = productTotalAfterPoints + shippingFee;
   const pointsEarned = LOYALTY_SETTINGS.enabled
-    ? Math.floor(total / LOYALTY_SETTINGS.dollarsPerPoint)
+    ? Math.floor(productTotalAfterPoints / LOYALTY_SETTINGS.dollarsPerPoint)
     : 0;
   return {
     subtotal,
     discount,
     shippingFee,
+    maxRedeemablePoints,
     pointsRedeemed,
     pointsDiscount,
     pointsEarned,
