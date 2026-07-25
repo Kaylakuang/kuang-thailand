@@ -1,0 +1,160 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(userPath(request.auth.uid))
+        && get(userPath(request.auth.uid)).data.role == "admin";
+    }
+
+    function userRoleIsSafe() {
+      return !("role" in request.resource.data)
+        || request.resource.data.role == "customer";
+    }
+
+    function ownUserDataOnly(uid) {
+      return isSelf(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name",
+          "email",
+          "phone",
+          "lineName",
+          "deliveryPreference",
+          "address",
+          "store",
+          "pointsBalance",
+          "pointsUpdatedAt",
+          "updatedAt",
+          "lastLoginAt"
+        ])
+        && selfPointsSafe();
+    }
+
+    function selfPointsSafe() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(["pointsBalance"])
+        || (
+          request.resource.data.pointsBalance is number
+          && request.resource.data.pointsBalance >= 0
+          && (
+            (!("pointsBalance" in resource.data) && request.resource.data.pointsBalance == 0)
+            || (("pointsBalance" in resource.data) && request.resource.data.pointsBalance <= resource.data.pointsBalance)
+          )
+        );
+    }
+
+    function validDeposit(data) {
+      return data.depositRate == 0.5
+        && data.depositAmount >= data.total * 0.5
+        && data.depositAmount < data.total * 0.5 + 1
+        && data.remainingAmount == data.total - data.depositAmount;
+    }
+
+    function ownOrderCreate() {
+      return signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.paymentStatus == "待付訂金"
+        && request.resource.data.orderStatus == "等待訂金"
+        && validDeposit(request.resource.data);
+    }
+
+    function orderMoneyUnchanged() {
+      return request.resource.data.subtotal == resource.data.subtotal
+        && request.resource.data.shippingFee == resource.data.shippingFee
+        && request.resource.data.discount == resource.data.discount
+        && request.resource.data.total == resource.data.total
+        && request.resource.data.depositRate == resource.data.depositRate
+        && request.resource.data.depositAmount == resource.data.depositAmount
+        && request.resource.data.remainingAmount == resource.data.remainingAmount;
+    }
+
+    function customerOrderUpdate() {
+      return signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && orderMoneyUnchanged()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "paymentStatus",
+          "paymentInfo",
+          "customerNote",
+          "updatedAt"
+        ])
+        && request.resource.data.paymentStatus in ["待付訂金", "訂金待確認"]
+        && request.resource.data.paymentStatus != "訂金已付款";
+    }
+
+    match /users/{uid} {
+      allow create: if isSelf(uid) && userRoleIsSafe();
+      allow read: if isSelf(uid) || isAdmin();
+      allow update: if isAdmin() || ownUserDataOnly(uid);
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAdmin() || resource.data.isActive == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if ownOrderCreate();
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin() || customerOrderUpdate();
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.orderId is string
+        && request.resource.data.amount is number;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "transferDate",
+            "amount",
+            "accountLastFive",
+            "payerName",
+            "note",
+            "status",
+            "updatedAt"
+          ])
+          && request.resource.data.status != "訂金已付款"
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promotions/{promotionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

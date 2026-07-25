@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>商品資訊｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title page-title--product">
+        <p class="eyebrow">PRODUCT INFO</p>
+        <h1>商品資訊</h1>
+      </section>
+      <section id="product-detail"></section>
+      <section class="section related-section">
+        <div class="section__head">
+          <div>
+            <p class="eyebrow">YOU MAY ALSO LIKE</p>
+            <h2>同分類商品</h2>
+          </div>
+        </div>
+        <div class="related-product-grid" id="related-products"></div>
+      </section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initProductDetailPage } from "./js/products.js?v=202607242329";
+      initSiteChrome("products");
+      initProductDetailPage();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>全部商品｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title page-title--catalog">
+        <p class="eyebrow" id="products-eyebrow">ALL PRODUCTS</p>
+        <h1 id="products-title">全部商品</h1>
+      </section>
+      <section class="toolbar toolbar--products" id="categories">
+        <div class="field">
+          <label for="product-search">關鍵字搜尋</label>
+          <input id="product-search" type="search" placeholder="輸入商品名稱、分類或說明">
+        </div>
+        <div class="field">
+          <label for="category-filter">商品分類</label>
+          <select id="category-filter"></select>
+        </div>
+        <div class="field">
+          <label for="sort-filter">排序</label>
+          <select id="sort-filter">
+            <option value="default">預設排序</option>
+            <option value="latest">最新商品</option>
+            <option value="price-asc">價格低到高</option>
+            <option value="price-desc">價格高到低</option>
+          </select>
+        </div>
+      </section>
+      <div class="section__head">
+        <p class="muted" id="products-count">正在讀取商品...</p>
+      </div>
+      <section class="product-grid" id="products-grid"></section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initProductsPage } from "./js/products.js?v=202607242329";
+      initSiteChrome("products");
+      initProductsPage();
+    </script>
+  </body>
+</html>

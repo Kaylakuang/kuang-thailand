@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登入｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main>
+      <section class="auth-card">
+        <p class="eyebrow">LOGIN</p>
+        <h1>會員登入</h1>
+        <form id="login-form" class="form-grid">
+          <div class="form-field form-field--full"><label for="login-email">Email</label><input id="login-email" type="email" required></div>
+          <div class="form-field form-field--full"><label for="login-password">密碼</label><input id="login-password" type="password" required></div>
+          <button class="btn btn--primary form-field--full" type="submit">登入</button>
+        </form>
+        <button class="btn btn--ghost" id="google-login" type="button" style="width:100%;margin-top:12px">使用 Google 登入</button>
+        <p class="muted" style="margin-top:18px"><a class="text-link" href="register.html">建立新帳號</a>｜<a class="text-link" href="forgot-password.html">忘記密碼</a></p>
+      </section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome, initLoginPage } from "./js/auth.js?v=202607242329";
+      initSiteChrome("auth");
+      initLoginPage();
+    </script>
+  </body>
+</html>

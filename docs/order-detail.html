@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>訂單明細｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title">
+        <p class="eyebrow">ORDER DETAIL</p>
+        <h1>訂單明細</h1>
+        <button class="btn btn--ghost btn--small" type="button" data-logout>登出</button>
+      </section>
+      <section id="order-detail-root"></section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initOrderDetailPage } from "./js/orders.js?v=202607242329";
+      initSiteChrome("orders");
+      initOrderDetailPage();
+    </script>
+  </body>
+</html>

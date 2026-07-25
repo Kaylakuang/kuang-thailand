@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>購物車｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title">
+        <p class="eyebrow">CART</p>
+        <h1>購物車</h1>
+      </section>
+      <section class="layout-grid cart-layout">
+        <div class="panel cart-panel">
+          <h2>商品明細</h2>
+          <div id="cart-root"></div>
+        </div>
+        <aside class="panel cart-summary-panel">
+          <div id="cart-summary"></div>
+          <a class="btn btn--primary cart-checkout-button" id="checkout-button" href="checkout.html">前往結帳</a>
+        </aside>
+      </section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initCartPage } from "./js/cart.js?v=202607242329";
+      initSiteChrome("cart");
+      initCartPage();
+    </script>
+  </body>
+</html>

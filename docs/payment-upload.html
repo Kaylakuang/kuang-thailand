@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>匯款回填｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title page-title--payment">
+        <p class="eyebrow">PAYMENT</p>
+        <h1>匯款回填</h1>
+      </section>
+      <section class="layout-grid payment-upload-layout">
+        <form class="panel payment-form-panel" id="payment-form">
+          <div id="payment-order-panel"></div>
+          <div class="form-grid payment-upload-fields">
+            <div class="form-field"><label for="payment-amount-display">匯款金額</label><input id="payment-amount-display" type="text" readonly aria-readonly="true"></div>
+            <div class="form-field"><label for="transfer-date">匯款日期</label><input id="transfer-date" type="date" required></div>
+            <div class="form-field"><label for="payer-name">匯款人姓名</label><input id="payer-name" required></div>
+            <div class="form-field"><label for="account-last-five">帳號後五碼</label><input id="account-last-five" minlength="5" maxlength="5" inputmode="numeric" required></div>
+            <div class="form-field form-field--full"><label for="payment-note">備註</label><textarea id="payment-note"></textarea></div>
+          </div>
+          <button class="btn btn--primary payment-submit-button" type="submit">送出匯款資料</button>
+        </form>
+      </section>
+    </main>
+    <div class="modal-backdrop is-hidden" id="payment-upload-success-modal" role="dialog" aria-modal="true" aria-labelledby="payment-upload-success-title">
+      <div class="modal-card modal-card--payment-upload-success">
+        <div class="success-mark" aria-hidden="true">✓</div>
+        <p class="eyebrow">SUCCESS</p>
+        <h2 id="payment-upload-success-title">匯款資料回填成功</h2>
+        <div class="modal-actions">
+          <a class="btn btn--primary" href="index.html">回到首頁</a>
+        </div>
+      </div>
+    </div>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607250001";
+      import { initPaymentUploadPage } from "./js/payment.js?v=202607250001";
+      initSiteChrome("orders");
+      initPaymentUploadPage();
+    </script>
+  </body>
+</html>

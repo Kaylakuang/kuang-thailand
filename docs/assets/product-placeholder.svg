@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+  <title id="title">匡老三代購網商品預留圖</title>
+  <desc id="desc">淡米色精品商品預留圖片</desc>
+  <rect width="800" height="800" fill="#f2eadf"/>
+  <rect x="88" y="88" width="624" height="624" rx="24" fill="#fbf8f2" stroke="#d8c8b4" stroke-width="4"/>
+  <rect x="310" y="198" width="180" height="338" rx="32" fill="#e4d5c3" stroke="#b78b48" stroke-width="4"/>
+  <rect x="337" y="160" width="126" height="62" rx="16" fill="#fbf8f2" stroke="#b78b48" stroke-width="4"/>
+  <path d="M296 563h208c22 0 40 18 40 40v16H256v-16c0-22 18-40 40-40z" fill="#d9c8b5"/>
+  <text x="400" y="404" text-anchor="middle" font-family="Arial, 'Noto Sans TC', sans-serif" font-size="32" letter-spacing="6" fill="#152238">KT</text>
+  <text x="400" y="660" text-anchor="middle" font-family="Arial, 'Noto Sans TC', sans-serif" font-size="26" fill="#4b4137">精選泰國好物</text>
+</svg>

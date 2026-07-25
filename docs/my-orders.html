@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>我的訂單｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title">
+        <p class="eyebrow">MY ORDERS</p>
+        <h1>我的訂單</h1>
+        <p class="muted">查看訂單狀態、訂金與匯款回填。</p>
+        <button class="btn btn--ghost btn--small" type="button" data-logout>登出</button>
+      </section>
+      <section class="orders-board" id="orders-root"></section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initMyOrdersPage } from "./js/orders.js?v=202607242329";
+      initSiteChrome("orders");
+      initMyOrdersPage();
+    </script>
+  </body>
+</html>

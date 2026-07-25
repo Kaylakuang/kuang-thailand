@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>管理員後台｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main class="container">
+      <section class="page-title">
+        <p class="eyebrow">ADMIN</p>
+        <h1>管理員後台</h1>
+      </section>
+      <section id="admin-root">
+        <div class="admin-tabs" aria-label="後台功能">
+          <button class="admin-tab is-active" type="button" data-admin-tab="dashboard-admin">儀表板</button>
+          <button class="admin-tab" type="button" data-admin-tab="products-admin">商品管理</button>
+          <button class="admin-tab" type="button" data-admin-tab="orders-admin">訂單管理</button>
+        </div>
+
+        <section class="admin-section is-active" id="dashboard-admin">
+          <div class="stats-grid" id="dashboard-stats"></div>
+          <div class="info-grid" style="margin-top:18px">
+            <div class="panel"><h2>熱銷商品</h2><div id="hot-products"></div></div>
+            <div class="panel"><h2>庫存不足商品</h2><div id="low-stock-products"></div></div>
+          </div>
+        </section>
+
+        <section class="admin-section" id="products-admin">
+          <div class="admin-product-studio">
+            <form class="panel admin-product-form" id="admin-product-form">
+              <div class="admin-form-head">
+                <p class="eyebrow">PRODUCT STUDIO</p>
+                <h2>商品工作台</h2>
+                <p class="muted">新增商品、上傳圖片、編輯價格與狀態，儲存後會同步到前台商品頁。</p>
+              </div>
+              <input id="admin-product-id" type="hidden">
+              <div class="form-grid">
+                <div class="form-field"><label for="admin-name">商品名稱</label><input id="admin-name" required></div>
+                <div class="form-field"><label for="admin-category">分類</label><select id="admin-category"></select></div>
+                <div class="form-field"><label for="admin-price">價格</label><input id="admin-price" type="number" min="0" required></div>
+                <div class="form-field"><label for="admin-original-price">原價</label><input id="admin-original-price" type="number" min="0"></div>
+                <div class="form-field"><label for="admin-stock">庫存</label><input id="admin-stock" type="number" min="0" required></div>
+                <div class="form-field"><label for="admin-limit">每人限購</label><input id="admin-limit" type="number" min="0"></div>
+                <div class="form-field"><label for="admin-status">商品狀態</label><select id="admin-status"></select></div>
+                <div class="form-field"><label for="admin-spec">規格</label><input id="admin-spec"></div>
+                <div class="form-field"><label for="admin-deadline">截止日期</label><input id="admin-deadline" type="date"></div>
+                <div class="form-field"><label for="admin-arrival">預計到貨</label><input id="admin-arrival" type="date"></div>
+                <div class="form-field form-field--full admin-image-studio">
+                  <label>商品圖片</label>
+                  <div class="admin-image-preview" id="admin-image-preview"><span>尚未選擇圖片</span></div>
+                  <div class="admin-upload-actions">
+                    <label class="btn btn--ghost upload-button" for="admin-image-upload">上傳圖片</label>
+                    <input id="admin-image-upload" type="file" accept="image/*" multiple>
+                    <span class="muted">可一次選多張，系統會自動壓縮。</span>
+                  </div>
+                  <label for="admin-image">封面圖片網址 / 圖片資料</label>
+                  <input id="admin-image" placeholder="可貼圖片網址，或使用上方上傳圖片">
+                  <label for="admin-images">更多商品圖片（每行一張網址，可留空）</label>
+                  <textarea id="admin-images" placeholder="第二張圖片網址&#10;第三張圖片網址"></textarea>
+                </div>
+                <div class="form-field form-field--full"><label for="admin-promotion">優惠活動</label><input id="admin-promotion" placeholder="例如：買五送一"></div>
+                <div class="form-field form-field--full"><label for="admin-description">商品說明</label><textarea id="admin-description"></textarea></div>
+              </div>
+              <div class="admin-switches">
+                <label class="checkbox-field"><input id="admin-active" type="checkbox" checked>上架</label>
+                <label class="checkbox-field"><input id="admin-preorder" type="checkbox" checked>預購商品</label>
+              </div>
+              <div class="admin-form-actions">
+                <button class="btn btn--primary" type="submit">儲存商品</button>
+                <button class="btn btn--ghost" id="reset-product-form" type="button">清空表單</button>
+                <button class="btn btn--ghost" id="import-sample-products" type="button">匯入範例商品</button>
+              </div>
+            </form>
+            <div class="panel admin-product-side">
+              <div class="admin-list-head">
+                <div>
+                  <p class="eyebrow">PRODUCT LIST</p>
+                  <h2>商品清單</h2>
+                </div>
+                <input id="admin-product-search" type="search" placeholder="搜尋商品">
+              </div>
+              <div id="admin-products-table"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-section" id="orders-admin">
+          <div class="toolbar">
+            <div class="field"><label for="order-search">搜尋訂單 / 姓名 / 手機</label><input id="order-search" type="search"></div>
+            <div class="field"><label for="order-payment-filter">付款狀態</label><select id="order-payment-filter"></select></div>
+            <div class="field"><label for="order-status-filter">訂單狀態</label><select id="order-status-filter"></select></div>
+          </div>
+          <button class="btn btn--ghost" id="export-orders" type="button" style="margin-bottom:14px">匯出 CSV</button>
+          <div class="table-wrap" id="admin-orders-table"></div>
+        </section>
+      </section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome } from "./js/auth.js?v=202607242329";
+      import { initAdminPage } from "./js/admin.js?v=202607242329";
+      initSiteChrome("admin");
+      initAdminPage();
+    </script>
+  </body>
+</html>

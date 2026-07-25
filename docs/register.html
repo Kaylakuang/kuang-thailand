@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>註冊｜匡老三代購網</title>
+    <link rel="icon" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/style.css?v=202607250925">
+  </head>
+  <body>
+    <div id="site-header"></div>
+    <main>
+      <section class="auth-card">
+        <p class="eyebrow">REGISTER</p>
+        <h1>建立會員</h1>
+        <form id="register-form" class="form-grid">
+          <div class="form-field form-field--full"><label for="register-name">姓名</label><input id="register-name" required></div>
+          <div class="form-field form-field--full"><label for="register-email">Email</label><input id="register-email" type="email" required></div>
+          <div class="form-field form-field--full"><label for="register-password">密碼</label><input id="register-password" type="password" minlength="6" required></div>
+          <div class="form-field form-field--full"><label for="register-phone">手機號碼</label><input id="register-phone" inputmode="tel"></div>
+          <div class="form-field form-field--full"><label for="register-line">LINE ID（選填）</label><input id="register-line"></div>
+          <button class="btn btn--primary form-field--full" type="submit">註冊</button>
+        </form>
+        <button class="btn btn--ghost" id="google-register" type="button" style="width:100%;margin-top:12px">使用 Google 註冊</button>
+        <p class="muted" style="margin-top:18px"><a class="text-link" href="login.html">已有帳號，前往登入</a></p>
+      </section>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module">
+      import { initSiteChrome, initRegisterPage } from "./js/auth.js?v=202607242329";
+      initSiteChrome("auth");
+      initRegisterPage();
+    </script>
+  </body>
+</html>
