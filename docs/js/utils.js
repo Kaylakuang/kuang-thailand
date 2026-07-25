@@ -241,12 +241,12 @@ export function renderSiteHeader(active = "") {
             </svg>
             <span class="cart-count" data-cart-count>0</span>
           </a>
-          <button class="menu-button" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="primary-nav"><span></span></button>
+          <button class="menu-button" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="primary-nav" onclick="const nav=document.getElementById('primary-nav');const open=nav.classList.toggle('is-open');this.setAttribute('aria-expanded',String(open));this.setAttribute('aria-label',open?'關閉選單':'開啟選單');"><span></span></button>
         </div>
       </nav>
     </header>
   `;
-  bindMobileMenu();
+
 }
 
 export function renderSiteFooter() {
