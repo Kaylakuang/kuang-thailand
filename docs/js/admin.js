@@ -1,5 +1,9 @@
 import {
   db,
+  storage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
   collection,
   doc,
   getDoc,
@@ -34,7 +38,8 @@ import {
 let adminProducts = [];
 let adminOrders = [];
 const ADMIN_IMAGE_MAX_SIZE = 720;
-const ADMIN_IMAGE_QUALITY = 0.7;
+const ADMIN_IMAGE_QUALITY = 0.72;
+const ADMIN_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 export async function initAdminPage() {
   const state = await requireAuth();
@@ -233,8 +238,31 @@ async function compressImageFile(file) {
   context.fillStyle = "#fffaf3";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", ADMIN_IMAGE_QUALITY));
-  return blob ? readAsDataUrl(blob) : source;
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", ADMIN_IMAGE_QUALITY));
+  if (!blob) throw new Error("瀏覽器無法壓縮圖片");
+  if (blob.size > ADMIN_IMAGE_MAX_BYTES) throw new Error("壓縮後圖片仍超過 5 MB");
+  return blob;
+}
+
+function createStorageFileName(file = {}) {
+  const originalName = String(file.name || "product")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50) || "product";
+  const uniqueId = globalThis.crypto?.randomUUID?.()
+    || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `product-images/${uniqueId}-${originalName}.webp`;
+}
+
+async function uploadProductImage(file) {
+  const blob = await compressImageFile(file);
+  const imageRef = ref(storage, createStorageFileName(file));
+  await uploadBytes(imageRef, blob, {
+    contentType: "image/webp",
+    cacheControl: "public,max-age=31536000,immutable"
+  });
+  return getDownloadURL(imageRef);
 }
 
 function resetProductForm(form) {
@@ -258,17 +286,17 @@ function bindProductTools() {
       .slice(0, 4);
     if (!files.length) return;
     upload.disabled = true;
-    showToast("正在處理圖片...");
+    showToast("正在壓縮並上傳圖片...");
     try {
       const uploadedImages = [];
       for (const file of files) {
-        uploadedImages.push(await compressImageFile(file));
+        uploadedImages.push(await uploadProductImage(file));
       }
       setProductImages([...uploadedImages, ...collectProductImages()]);
-      showToast("圖片已加入商品");
+      showToast("圖片已上傳至 Firebase Storage");
     } catch (error) {
       console.error(error);
-      showToast("圖片處理失敗，請換一張圖片試試");
+      showToast(error?.message || "圖片上傳失敗，請重新登入後再試");
     } finally {
       upload.disabled = false;
       upload.value = "";
