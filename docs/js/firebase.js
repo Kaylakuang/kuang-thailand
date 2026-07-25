@@ -27,10 +27,17 @@ import {
   serverTimestamp,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export {
@@ -53,5 +60,8 @@ export {
   query,
   where,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL
 };
