@@ -12,7 +12,7 @@ import {
   getParam,
   showToast
 } from "./utils.js";
-import { loadOrder } from "./orders.js?v=202607250001";
+import { loadOrder } from "./orders.js?v=202607252330";
 
 let currentOrder = null;
 let currentUser = null;
