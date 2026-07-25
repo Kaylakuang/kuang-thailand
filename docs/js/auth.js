@@ -20,7 +20,7 @@ import {
   renderSiteFooter,
   showToast,
   escapeHTML
-} from "./utils.js?v=202607251405";
+} from "./utils.js?v=202607251430";
 import { updateCartCount } from "./cart.js";
 
 let currentUser = null;
