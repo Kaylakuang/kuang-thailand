@@ -29,8 +29,9 @@ import {
   calculateCartTotals,
   clearCart,
   getCartItems,
+  getManualGiftQuantity,
   renderCartSummary
-} from "./cart.js?v=202607251345";
+} from "./cart.js?v=202607252330";
 
 const CHECKOUT_PROFILE_CACHE_KEY = "kt-checkout-profile";
 const CHECKOUT_DRAFT_KEY = "kt-checkout-draft";
@@ -135,11 +136,15 @@ export async function initCheckoutPage() {
       return;
     }
 
+    const orderItems = items.map((item) => ({
+      ...item,
+      giftQuantity: getManualGiftQuantity(item)
+    }));
     const order = {
       orderId,
       userId: state.user.uid,
       customerInfo,
-      items,
+      items: orderItems,
       subtotal: totals.subtotal,
       shippingFee: totals.shippingFee,
       discount: totals.discount,
@@ -531,18 +536,22 @@ function renderCheckoutItems(target, items) {
   target.innerHTML = `
     <h2>訂單商品</h2>
     <div class="checkout-item-list">
-      ${items.map((item) => `
-        <div class="checkout-line-item">
-          <div>
-            <h3>${escapeHTML(item.name)}</h3>
-            <p>${escapeHTML(item.spec || item.category || "")}</p>
+      ${items.map((item) => {
+        const giftQuantity = getManualGiftQuantity(item);
+        return `
+          <div class="checkout-line-item">
+            <div>
+              <h3>${escapeHTML(item.name)}</h3>
+              <p>${escapeHTML(item.spec || item.category || "")}</p>
+              ${giftQuantity > 0 ? `<p>🎁 出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
+            </div>
+            <div class="checkout-line-price">
+              <span>${formatCurrency(item.price)} x ${item.quantity}</span>
+              <strong>${formatCurrency(item.price * item.quantity)}</strong>
+            </div>
           </div>
-          <div class="checkout-line-price">
-            <span>${formatCurrency(item.price)} x ${item.quantity}</span>
-            <strong>${formatCurrency(item.price * item.quantity)}</strong>
-          </div>
-        </div>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
 }
