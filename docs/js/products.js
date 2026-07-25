@@ -174,8 +174,8 @@ export async function loadProducts(options = {}) {
     }, index));
 
     if (!products.length) {
-      cachedProducts = await fetchSampleProducts();
-      return cachedProducts;
+      cachedProducts = [];
+      return [];
     }
 
     cachedProducts = products
