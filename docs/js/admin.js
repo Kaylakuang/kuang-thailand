@@ -17,7 +17,7 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_STATUS
 } from "./settings.js?v=202607242329";
-import { loadProducts } from "./products.js?v=202607242329";
+import { loadProducts } from "./products.js?v=202607251600";
 import {
   $,
   escapeHTML,
