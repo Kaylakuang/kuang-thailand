@@ -21,7 +21,7 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_STATUS
 } from "./settings.js?v=202607242329";
-import { loadProducts } from "./products.js?v=202607261330";
+import { loadProducts } from "./products.js?v=202607261445";
 import {
   $,
   escapeHTML,
@@ -41,6 +41,19 @@ const ADMIN_IMAGE_MAX_SIZE = 900;
 const ADMIN_IMAGE_QUALITY = 0.75;
 const ADMIN_IMAGE_TARGET_BYTES = 550 * 1024;
 const ADMIN_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const ADMIN_REQUEST_TIMEOUT_MS = 8000;
+
+function withAdminTimeout(promise, label) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(`${label}讀取逾時`));
+    }, ADMIN_REQUEST_TIMEOUT_MS);
+  });
+
+  return Promise.race([promise, timeout])
+    .finally(() => window.clearTimeout(timeoutId));
+}
 
 export async function initAdminPage() {
   const state = await requireAuth();
@@ -60,12 +73,22 @@ export async function initAdminPage() {
 
   bindTabs();
   fillAdminSelects();
-  await refreshAdminData();
   bindProductForm();
   bindProductTools();
   bindOrderFilters();
   bindCsvExport();
   bindSampleImport();
+
+  try {
+    await refreshAdminData();
+  } catch (error) {
+    console.error("Unable to load admin data.", error);
+    showToast("後台資料讀取逾時，請重新整理後再試");
+    const dashboard = $("#dashboard-stats");
+    if (dashboard) {
+      dashboard.innerHTML = "<div class='empty-state'>資料暫時無法讀取，請重新整理頁面。</div>";
+    }
+  }
 }
 
 function bindTabs() {
@@ -102,7 +125,10 @@ async function refreshProducts() {
 }
 
 async function refreshOrders() {
-  const snapshot = await getDocs(collection(db, "orders"));
+  const snapshot = await withAdminTimeout(
+    getDocs(collection(db, "orders")),
+    "訂單資料"
+  );
   adminOrders = snapshot.docs
     .map((entry) => ({ ...entry.data(), docId: entry.id }))
     .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
