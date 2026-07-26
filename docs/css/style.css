@@ -3983,6 +3983,20 @@ th {
   }
 }
 
+/* Product filter dropdown stacking fix */
+body > main {
+  z-index: 2;
+}
+
+body > .footer {
+  z-index: 1;
+}
+
+.toolbar--products {
+  position: relative;
+  z-index: 3;
+}
+
 @media (min-width: 980px) {
   .menu-button {
     display: none;
