@@ -70,7 +70,66 @@ const CATEGORY_PAGE_COPY = {
 };
 
 let cachedProducts = null;
+let productsRefreshPromise = null;
 let customSelectListenerBound = false;
+const PRODUCTS_CACHE_KEY = "kuang-thailand-products-cache-v1";
+
+function readProductsCache() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || "null");
+    if (!stored || !Array.isArray(stored.products) || !stored.products.length) return null;
+    return stored.products.map(normalizeProduct);
+  } catch (error) {
+    console.warn("Products cache read failed", error);
+    return null;
+  }
+}
+
+function writeProductsCache(products) {
+  try {
+    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      products
+    }));
+  } catch (error) {
+    console.warn("Products cache write failed", error);
+  }
+}
+
+async function fetchProductsFromFirestore(includeInactive = false) {
+  const ref = collection(db, "products");
+  const request = includeInactive ? ref : query(ref, where("isActive", "==", true));
+  const snapshot = await getDocs(request);
+  return snapshot.docs
+    .map((entry, index) => normalizeProduct({
+      ...entry.data(),
+      docId: entry.id,
+      id: entry.data().id || entry.id
+    }, index))
+    .filter((product) => includeInactive || product.isActive)
+    .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+}
+
+function refreshProductsInBackground() {
+  if (productsRefreshPromise) return productsRefreshPromise;
+  productsRefreshPromise = fetchProductsFromFirestore(false)
+    .then((products) => {
+      cachedProducts = products;
+      writeProductsCache(products);
+      window.dispatchEvent(new CustomEvent("kuang:products-updated", {
+        detail: { products }
+      }));
+      return products;
+    })
+    .catch((error) => {
+      console.warn("Products background refresh failed", error);
+      return cachedProducts || [];
+    })
+    .finally(() => {
+      productsRefreshPromise = null;
+    });
+  return productsRefreshPromise;
+}
 
 function closeCustomSelects(except = null) {
   document.querySelectorAll(".custom-select.is-open").forEach((element) => {
@@ -163,24 +222,24 @@ export async function loadProducts(options = {}) {
   if (cachedProducts && !includeInactive && !forceSample) return cachedProducts;
   if (forceSample) return fetchSampleProducts();
 
-  try {
-    const ref = collection(db, "products");
-    const request = includeInactive ? ref : query(ref, where("isActive", "==", true));
-    const snapshot = await getDocs(request);
-    const products = snapshot.docs.map((entry, index) => normalizeProduct({
-      ...entry.data(),
-      docId: entry.id,
-      id: entry.data().id || entry.id
-    }, index));
+  if (!includeInactive) {
+    const storedProducts = readProductsCache();
+    if (storedProducts) {
+      cachedProducts = storedProducts;
+      refreshProductsInBackground();
+      return cachedProducts;
+    }
+  }
 
+  try {
+    const products = await fetchProductsFromFirestore(includeInactive);
     if (!products.length) {
       cachedProducts = [];
       return [];
     }
 
-    cachedProducts = products
-      .filter((product) => includeInactive || product.isActive)
-      .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+    cachedProducts = products;
+    if (!includeInactive) writeProductsCache(products);
     return cachedProducts;
   } catch (error) {
     console.warn("Firestore products fallback to sample data", error);
@@ -217,14 +276,21 @@ function getDisplayPromotionText(text) {
     .trim();
 }
 
-export function renderProductCard(product) {
+export function renderProductCard(product, index = 0) {
   const available = productIsAvailable(product);
   const badge = getProductCardBadge(product, available);
   const promoText = getDisplayPromotionText(product.promotionText);
   return `
     <article class="product-card">
       <a class="product-card__image" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="查看 ${escapeHTML(product.name)}">
-        <img src="${escapeHTML(getProductImage(product))}" alt="${escapeHTML(product.name)}" onerror="this.src='assets/product-placeholder.svg'">
+        <img
+          src="${escapeHTML(getProductImage(product))}"
+          alt="${escapeHTML(product.name)}"
+          loading="${index < 5 ? "eager" : "lazy"}"
+          decoding="async"
+          ${index < 2 ? 'fetchpriority="high"' : ""}
+          onerror="this.src='assets/product-placeholder.svg'"
+        >
         <span class="product-card__badges">
           <span class="badge ${badge.className}">${escapeHTML(badge.label)}</span>
         </span>
@@ -246,7 +312,7 @@ function renderRelatedProductCard(product) {
   return `
     <article class="related-product-card">
       <a class="related-product-card__image" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="查看 ${escapeHTML(product.name)}">
-        <img src="${escapeHTML(getProductImage(product))}" alt="${escapeHTML(product.name)}" onerror="this.src='assets/product-placeholder.svg'">
+        <img src="${escapeHTML(getProductImage(product))}" alt="${escapeHTML(product.name)}" loading="lazy" decoding="async" onerror="this.src='assets/product-placeholder.svg'">
       </a>
       <a class="related-product-card__name" href="product.html?id=${encodeURIComponent(product.id)}">${escapeHTML(product.name)}</a>
     </article>
@@ -275,14 +341,18 @@ export async function initHomePage() {
   const grid = $("#best-sellers-grid");
   if (!grid) return;
   grid.innerHTML = '<div class="loading">正在整理熱門商品...</div>';
-  const products = await loadProducts();
-  const sorted = [
-    ...BEST_SELLER_NAMES.map((name) => products.find((product) => product.name === name)).filter(Boolean),
-    ...products.filter((product) => !BEST_SELLER_NAMES.includes(product.name))
-  ].slice(0, 5);
-
-  grid.innerHTML = sorted.map(renderProductCard).join("");
-  bindAddToCart(sorted, grid);
+  const paintHomeProducts = (products) => {
+    const sorted = [
+      ...BEST_SELLER_NAMES.map((name) => products.find((product) => product.name === name)).filter(Boolean),
+      ...products.filter((product) => !BEST_SELLER_NAMES.includes(product.name))
+    ].slice(0, 5);
+    grid.innerHTML = sorted.map(renderProductCard).join("");
+    bindAddToCart(sorted, grid);
+  };
+  window.addEventListener("kuang:products-updated", (event) => {
+    paintHomeProducts(event.detail.products);
+  }, { once: true });
+  paintHomeProducts(await loadProducts());
 }
 
 export async function initProductsPage() {
@@ -333,7 +403,7 @@ export async function initProductsPage() {
 
   updateProductsHeader("", "正在讀取商品...");
 
-  const products = await loadProducts();
+  let products = await loadProducts();
   const paint = () => {
     const keyword = search.value.trim().toLowerCase();
     let list = products.filter((product) => {
@@ -356,6 +426,10 @@ export async function initProductsPage() {
   };
 
   [category, search, sort].forEach((node) => node.addEventListener("input", paint));
+  window.addEventListener("kuang:products-updated", (event) => {
+    products = event.detail.products;
+    paint();
+  }, { once: true });
   paint();
 }
 
