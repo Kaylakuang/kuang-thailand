@@ -71,6 +71,19 @@ const CATEGORY_PAGE_COPY = {
 
 let cachedProducts = null;
 let customSelectListenerBound = false;
+const PRODUCTS_REQUEST_TIMEOUT_MS = 8000;
+
+function withTimeout(promise, timeoutMs = PRODUCTS_REQUEST_TIMEOUT_MS) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error("商品資料讀取逾時"));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout])
+    .finally(() => window.clearTimeout(timeoutId));
+}
 
 function closeCustomSelects(except = null) {
   document.querySelectorAll(".custom-select.is-open").forEach((element) => {
@@ -166,7 +179,7 @@ export async function loadProducts(options = {}) {
   try {
     const ref = collection(db, "products");
     const request = includeInactive ? ref : query(ref, where("isActive", "==", true));
-    const snapshot = await getDocs(request);
+    const snapshot = await withTimeout(getDocs(request));
     const products = snapshot.docs.map((entry, index) => normalizeProduct({
       ...entry.data(),
       docId: entry.id,
