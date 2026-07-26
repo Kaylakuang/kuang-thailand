@@ -31,7 +31,7 @@ import {
   getCartItems,
   getManualGiftQuantity,
   renderCartSummary
-} from "./cart.js?v=202607261330";
+} from "./cart.js?v=202607252330";
 
 const CHECKOUT_PROFILE_CACHE_KEY = "kt-checkout-profile";
 const CHECKOUT_DRAFT_KEY = "kt-checkout-draft";
@@ -138,7 +138,7 @@ export async function initCheckoutPage() {
 
     const orderItems = items.map((item) => ({
       ...item,
-      giftQuantity: getManualGiftQuantity(item, items)
+      giftQuantity: getManualGiftQuantity(item)
     }));
     const order = {
       orderId,
@@ -537,13 +537,12 @@ function renderCheckoutItems(target, items) {
     <h2>訂單商品</h2>
     <div class="checkout-item-list">
       ${items.map((item) => {
-        const giftQuantity = getManualGiftQuantity(item, items);
+        const giftQuantity = getManualGiftQuantity(item);
         return `
           <div class="checkout-line-item">
             <div>
               <h3>${escapeHTML(item.name)}</h3>
               <p>${escapeHTML(item.spec || item.category || "")}</p>
-              ${item.variant ? `<p>款式：${escapeHTML(item.variant)}</p>` : ""}
               ${giftQuantity > 0 ? `<p>🎁 出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
             </div>
             <div class="checkout-line-price">
