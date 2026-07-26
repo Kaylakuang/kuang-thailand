@@ -364,7 +364,6 @@ function renderOrderItems(items = []) {
             <div class="order-detail-item__main">
               <h3>${escapeHTML(item.name)}</h3>
               <p>${escapeHTML(item.spec || item.category || "")}</p>
-              ${item.variant ? `<p>款式：${escapeHTML(item.variant)}</p>` : ""}
               ${giftQuantity > 0 ? `<p>🎁 出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
             </div>
             <div class="order-detail-item__price">
@@ -395,7 +394,6 @@ function renderOrderItemRows(items = []) {
         <div>
           <strong>${escapeHTML(item.name)}</strong>
           <span>${escapeHTML(item.spec || item.category || "")}</span>
-          ${item.variant ? `<span>款式：${escapeHTML(item.variant)}</span>` : ""}
           ${giftQuantity > 0 ? `<span>🎁 出貨加贈 ${giftQuantity} 件</span>` : ""}
         </div>
         <p>${formatCurrency(item.price)} x ${item.quantity}</p>
