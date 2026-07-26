@@ -47,11 +47,6 @@
                 <div class="form-field"><label for="admin-limit">每人限購</label><input id="admin-limit" type="number" min="0"></div>
                 <div class="form-field"><label for="admin-status">商品狀態</label><select id="admin-status"></select></div>
                 <div class="form-field"><label for="admin-spec">規格</label><input id="admin-spec"></div>
-                <div class="form-field form-field--full">
-                  <label for="admin-variants">款式選項</label>
-                  <textarea id="admin-variants" placeholder="每行輸入一個款式，例如：&#10;黑色&#10;白色&#10;粉色"></textarea>
-                  <span class="muted">價格與庫存共用；沒有款式可留空。</span>
-                </div>
                 <div class="form-field"><label for="admin-deadline">截止日期</label><input id="admin-deadline" type="date"></div>
                 <div class="form-field"><label for="admin-arrival">預計到貨</label><input id="admin-arrival" type="date"></div>
                 <div class="form-field form-field--full admin-image-studio">
@@ -107,7 +102,7 @@
     <div id="site-footer"></div>
     <script type="module">
      import { initSiteChrome } from "./js/auth.js?v=202607251835";
-import { initAdminPage } from "./js/admin.js?v=202607261500";
+import { initAdminPage } from "./js/admin.js?v=202607252330";
       initSiteChrome("admin");
       initAdminPage();
     </script>
