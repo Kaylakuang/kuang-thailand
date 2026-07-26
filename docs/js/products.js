@@ -19,8 +19,8 @@ import {
   renderStatusPill,
   showToast,
   toTime
-} from "./utils.js?v=202607261330";
-import { addToCart } from "./cart.js?v=202607261330";
+} from "./utils.js?v=202607242329";
+import { addToCart } from "./cart.js";
 
 const BEST_SELLER_NAMES = [
   "KUNNA 巧克力椰子脆餅",
@@ -71,19 +71,6 @@ const CATEGORY_PAGE_COPY = {
 
 let cachedProducts = null;
 let customSelectListenerBound = false;
-const PRODUCTS_REQUEST_TIMEOUT_MS = 8000;
-
-function withTimeout(promise, timeoutMs = PRODUCTS_REQUEST_TIMEOUT_MS) {
-  let timeoutId;
-  const timeout = new Promise((_, reject) => {
-    timeoutId = window.setTimeout(() => {
-      reject(new Error("商品資料讀取逾時"));
-    }, timeoutMs);
-  });
-
-  return Promise.race([promise, timeout])
-    .finally(() => window.clearTimeout(timeoutId));
-}
 
 function closeCustomSelects(except = null) {
   document.querySelectorAll(".custom-select.is-open").forEach((element) => {
@@ -179,7 +166,7 @@ export async function loadProducts(options = {}) {
   try {
     const ref = collection(db, "products");
     const request = includeInactive ? ref : query(ref, where("isActive", "==", true));
-    const snapshot = await withTimeout(getDocs(request));
+    const snapshot = await getDocs(request);
     const products = snapshot.docs.map((entry, index) => normalizeProduct({
       ...entry.data(),
       docId: entry.id,
@@ -230,12 +217,6 @@ function getDisplayPromotionText(text) {
     .trim();
 }
 
-function renderVariantOptions(product) {
-  return (product.variants || [])
-    .map((variant) => `<option value="${escapeHTML(variant)}">${escapeHTML(variant)}</option>`)
-    .join("");
-}
-
 export function renderProductCard(product) {
   const available = productIsAvailable(product);
   const badge = getProductCardBadge(product, available);
@@ -252,15 +233,6 @@ export function renderProductCard(product) {
         <a href="product.html?id=${encodeURIComponent(product.id)}"><h3 class="product-card__name">${escapeHTML(product.name)}</h3></a>
         <p class="product-card__desc">${escapeHTML(product.description)}</p>
         ${promoText ? `<p class="promo-text">${escapeHTML(promoText)}</p>` : ""}
-        ${(product.variants || []).length ? `
-          <label class="field" style="margin-top:10px">
-            <span>選擇款式</span>
-            <select data-product-variant aria-label="${escapeHTML(product.name)}款式">
-              <option value="">請選擇款式</option>
-              ${renderVariantOptions(product)}
-            </select>
-          </label>
-        ` : ""}
         <div class="product-card__meta">
           <div class="price">${formatCurrency(product.price)}${product.originalPrice ? ` <del>${formatCurrency(product.originalPrice)}</del>` : ""}</div>
           <button class="add-button" type="button" data-add-cart="${escapeHTML(product.id)}" ${available ? "" : "disabled"} aria-label="加入購物車">+</button>
@@ -293,14 +265,7 @@ export function bindAddToCart(products, scope = document) {
     button.addEventListener("click", () => {
       const product = products.find((item) => item.id === button.dataset.addCart);
       if (!product) return;
-      const variantSelect = button.closest(".product-card")?.querySelector("[data-product-variant]");
-      const selectedVariant = variantSelect?.value || "";
-      if ((product.variants || []).length && !selectedVariant) {
-        showToast("請先選擇商品款式");
-        variantSelect?.focus();
-        return;
-      }
-      addToCart(product, 1, selectedVariant);
+      addToCart(product, 1);
     });
   });
 }
@@ -373,7 +338,7 @@ export async function initProductsPage() {
     const keyword = search.value.trim().toLowerCase();
     let list = products.filter((product) => {
       const matchesCategory = !category.value || product.category === category.value;
-      const haystack = `${product.name} ${product.description} ${product.category} ${(product.variants || []).join(" ")}`.toLowerCase();
+      const haystack = `${product.name} ${product.description} ${product.category}`.toLowerCase();
       return matchesCategory && (!keyword || haystack.includes(keyword));
     });
 
@@ -455,15 +420,6 @@ export async function initProductDetailPage() {
           <div class="summary-row"><span>截止時間</span><strong>${escapeHTML(formatDate(product.deadline) || "尚未設定")}</strong></div>
           <div class="summary-row"><span>預計到貨</span><strong>${escapeHTML(product.arrivalDate || "依開團公告")}</strong></div>
         </div>
-        ${(product.variants || []).length ? `
-          <label class="field">
-            <span>選擇款式</span>
-            <select id="detail-variant" aria-label="${escapeHTML(product.name)}款式">
-              <option value="">請選擇款式</option>
-              ${renderVariantOptions(product)}
-            </select>
-          </label>
-        ` : ""}
         <div class="product-purchase-row">
           <div class="product-quantity-control" aria-label="購買數量">
             <button type="button" data-quantity-step="-1" aria-label="減少數量">−</button>
@@ -515,13 +471,7 @@ export async function initProductDetailPage() {
 
   $("#detail-add")?.addEventListener("click", () => {
     const quantity = clampQuantity($("#detail-quantity")?.value || 1);
-    const selectedVariant = $("#detail-variant")?.value || "";
-    if ((product.variants || []).length && !selectedVariant) {
-      showToast("請先選擇商品款式");
-      $("#detail-variant")?.focus();
-      return;
-    }
-    addToCart(product, quantity, selectedVariant);
+    addToCart(product, quantity);
   });
 
   const related = $("#related-products");
