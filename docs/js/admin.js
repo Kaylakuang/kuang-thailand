@@ -21,7 +21,7 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_STATUS
 } from "./settings.js?v=202607242329";
-import { loadProducts } from "./products.js?v=202607251600";
+import { loadProducts } from "./products.js?v=202607261330";
 import {
   $,
   escapeHTML,
@@ -33,7 +33,7 @@ import {
   showToast,
   slugify,
   toTime
-} from "./utils.js?v=202607242329";
+} from "./utils.js?v=202607261330";
 
 let adminProducts = [];
 let adminOrders = [];
@@ -353,6 +353,12 @@ function bindProductForm() {
       price: Number($("#admin-price").value || 0),
       originalPrice: Number($("#admin-original-price").value || 0),
       spec: $("#admin-spec").value.trim(),
+      variants: [...new Set(
+        $("#admin-variants").value
+          .split(/\r?\n/)
+          .map((variant) => variant.trim())
+          .filter(Boolean)
+      )],
       stock: Number($("#admin-stock").value || 0),
       isActive: $("#admin-active").checked,
       isPreorder: $("#admin-preorder").checked,
@@ -383,7 +389,7 @@ function renderAdminProducts() {
   if (!root) return;
   const keyword = ($("#admin-product-search")?.value || "").trim().toLowerCase();
   const products = adminProducts.filter((product) => {
-    const haystack = `${product.name} ${product.category} ${product.description} ${product.status}`.toLowerCase();
+    const haystack = `${product.name} ${product.category} ${product.description} ${product.status} ${(product.variants || []).join(" ")}`.toLowerCase();
     return !keyword || haystack.includes(keyword);
   });
   root.innerHTML = `
@@ -400,6 +406,7 @@ function renderAdminProducts() {
               </div>
               <h3>${escapeHTML(product.name)}</h3>
               <p class="muted">${escapeHTML(product.category)}｜${escapeHTML(product.spec || "未設定規格")}</p>
+              ${(product.variants || []).length ? `<p class="muted">款式：${product.variants.map(escapeHTML).join("、")}</p>` : ""}
               <div class="admin-product-meta">
                 <strong>${formatCurrency(product.price)}</strong>
                 <span>庫存 ${Number(product.stock || 0)}</span>
@@ -451,6 +458,7 @@ function fillProductForm(product) {
   $("#admin-price").value = product.price || 0;
   $("#admin-original-price").value = product.originalPrice || 0;
   $("#admin-spec").value = product.spec || "";
+  $("#admin-variants").value = (product.variants || []).join("\n");
   $("#admin-stock").value = product.stock || 0;
   $("#admin-active").checked = product.isActive !== false;
   $("#admin-preorder").checked = product.isPreorder !== false;
@@ -478,7 +486,7 @@ function renderAdminOrderItems(items = []) {
     const giftQuantity = getAdminGiftQuantity(item);
     return `
       <div>
-        ${escapeHTML(item.name)} × ${Number(item.quantity || 0)}
+        ${escapeHTML(item.name)}${item.variant ? `｜款式：${escapeHTML(item.variant)}` : ""} × ${Number(item.quantity || 0)}
         ${giftQuantity > 0 ? `<br><strong>🎁 出貨加贈 ${giftQuantity} 件</strong>` : ""}
       </div>
     `;
@@ -528,6 +536,9 @@ function renderAdminOrders() {
             <td><select data-admin-payment>${PAYMENT_STATUS.map((status) => `<option value="${escapeHTML(status)}" ${order.paymentStatus === status ? "selected" : ""}>${escapeHTML(status)}</option>`).join("")}</select></td>
             <td><select data-admin-status>${ORDER_STATUS.map((status) => `<option value="${escapeHTML(status)}" ${order.orderStatus === status ? "selected" : ""}>${escapeHTML(status)}</option>`).join("")}</select></td>
             <td>
+              ${order.customerNote
+                ? `<p><strong>客人備註：</strong>${escapeHTML(order.customerNote)}</p>`
+                : '<p class="muted">客人未填備註</p>'}
               <input data-admin-tracking value="${escapeHTML(order.trackingNumber || "")}" placeholder="物流單號">
               <textarea data-admin-note placeholder="管理員備註">${escapeHTML(order.adminNote || "")}</textarea>
             </td>
@@ -599,17 +610,18 @@ function renderAdminOrders() {
 function bindCsvExport() {
   $("#export-orders")?.addEventListener("click", () => {
     const rows = [
-      ["訂單編號", "下單時間", "客戶姓名", "手機", "商品明細", "贈品提醒", "付款方式", "付款狀態", "訂單狀態", "總金額", "訂金", "尾款", "物流單號"],
+      ["訂單編號", "下單時間", "客戶姓名", "手機", "商品明細", "贈品提醒", "客人備註", "付款方式", "付款狀態", "訂單狀態", "總金額", "訂金", "尾款", "物流單號"],
       ...adminOrders.map((order) => [
         order.orderId,
         formatDateTime(order.createdAt),
         order.customerInfo?.name || "",
         order.customerInfo?.phone || "",
-        (order.items || []).map((item) => `${item.name} × ${Number(item.quantity || 0)}`).join("、"),
+        (order.items || []).map((item) => `${item.name}${item.variant ? `（款式：${item.variant}）` : ""} × ${Number(item.quantity || 0)}`).join("、"),
         (order.items || [])
           .filter((item) => getAdminGiftQuantity(item) > 0)
           .map((item) => `${item.name} 加贈 ${getAdminGiftQuantity(item)} 件`)
           .join("、"),
+        order.customerNote || "",
         order.paymentMethod || "",
         order.paymentStatus || "",
         order.orderStatus || "",
