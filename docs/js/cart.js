@@ -40,13 +40,31 @@ export function updateCartCount() {
   });
 }
 
-export function addToCart(product, quantity = 1) {
+export function getCartItemKey(item = {}) {
+  return `${String(item.id || "")}::${String(item.variant || "")}`;
+}
+
+export function addToCart(product, quantity = 1, selectedVariant = "") {
   if (!product || !product.id) return;
   const items = getCartItems();
-  const index = items.findIndex((item) => item.id === product.id);
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const variant = String(selectedVariant || "").trim();
+  if (variants.length && !variants.includes(variant)) {
+    showToast("請先選擇商品款式");
+    return;
+  }
+  const cartKey = getCartItemKey({ id: product.id, variant });
+  const index = items.findIndex((item) => getCartItemKey(item) === cartKey);
   const stock = Number(product.stock || 0);
-  const requested = Number(quantity || 1);
+  const requested = Math.max(1, Number(quantity || 1));
   const limit = Number(product.limitPerUser || 0);
+  const productMaximum = Math.min(stock > 0 ? stock : 999, limit > 0 ? limit : 999);
+  const otherVariantQuantity = items.reduce((sum, item, itemIndex) => (
+    item.id === product.id && itemIndex !== index
+      ? sum + Number(item.quantity || 0)
+      : sum
+  ), 0);
+  const availableForVariant = Math.max(0, productMaximum - otherVariantQuantity);
 
   if (stock === 0 || product.status === "已售完") {
     showToast("此商品目前已售完");
@@ -55,12 +73,16 @@ export function addToCart(product, quantity = 1) {
 
   if (index >= 0) {
     const nextQuantity = items[index].quantity + requested;
-    const cappedByStock = stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity;
-    items[index].quantity = limit > 0 ? Math.min(cappedByStock, limit) : cappedByStock;
+    items[index].quantity = Math.min(nextQuantity, availableForVariant);
   } else {
-    const initial = stock > 0 ? Math.min(requested, stock) : requested;
+    const initial = Math.min(requested, availableForVariant);
+    if (initial <= 0) {
+      showToast("已達此商品的庫存或限購數量");
+      return;
+    }
     items.push({
       id: product.id,
+      cartKey,
       name: product.name,
       image: getProductImage(product),
       category: product.category,
@@ -68,6 +90,7 @@ export function addToCart(product, quantity = 1) {
       price: Number(product.price) || 0,
       originalPrice: Number(product.originalPrice) || 0,
       spec: product.spec || "",
+      variant,
       stock,
       isPreorder: product.isPreorder !== false,
       arrivalDate: product.arrivalDate || "",
@@ -82,21 +105,30 @@ export function addToCart(product, quantity = 1) {
   showToast("已加入購物車");
 }
 
-export function changeCartQuantity(productId, quantity) {
-  const next = getCartItems()
+export function changeCartQuantity(cartKey, quantity) {
+  const items = getCartItems();
+  const target = items.find((item) => getCartItemKey(item) === cartKey);
+  if (!target) return;
+  const otherVariantQuantity = items.reduce((sum, item) => (
+    item.id === target.id && getCartItemKey(item) !== cartKey
+      ? sum + Number(item.quantity || 0)
+      : sum
+  ), 0);
+  const stock = Number(target.stock || 0);
+  const limit = Number(target.limitPerUser || 0);
+  const productMaximum = Math.min(stock > 0 ? stock : 999, limit > 0 ? limit : 999);
+  const maximumForVariant = Math.max(1, productMaximum - otherVariantQuantity);
+  const next = items
     .map((item) => {
-      if (item.id !== productId) return item;
-      const stock = Number(item.stock || 0);
-      const limit = Number(item.limitPerUser || 0);
-      const max = Math.max(1, Math.min(stock || 999, limit || 999));
-      return { ...item, quantity: Math.max(1, Math.min(Number(quantity) || 1, max)) };
+      if (getCartItemKey(item) !== cartKey) return item;
+      return { ...item, quantity: Math.max(1, Math.min(Number(quantity) || 1, maximumForVariant)) };
     })
     .filter((item) => item.quantity > 0);
   saveCartItems(next);
 }
 
-export function removeCartItem(productId) {
-  saveCartItems(getCartItems().filter((item) => item.id !== productId));
+export function removeCartItem(cartKey) {
+  saveCartItems(getCartItems().filter((item) => getCartItemKey(item) !== cartKey));
 }
 
 export function getMaxRedeemablePoints(productAmount) {
@@ -106,11 +138,19 @@ export function getMaxRedeemablePoints(productAmount) {
   return Math.floor(amount / 500) * 100;
 }
 
-export function getManualGiftQuantity(item = {}) {
+export function getManualGiftQuantity(item = {}, items = [item]) {
   const promotionText = String(item.promotionText || "");
   const promotion = PROMOTION_SETTINGS.buyXGetY;
   if (!promotion.enabled || !promotionText.includes(promotion.label)) return 0;
-  const purchasedQuantity = Math.max(0, Math.floor(Number(item.quantity) || 0));
+  const matchingItems = items.filter((entry) => (
+    entry.id === item.id
+    && String(entry.promotionText || "").includes(promotion.label)
+  ));
+  if (getCartItemKey(matchingItems[0]) !== getCartItemKey(item)) return 0;
+  const purchasedQuantity = matchingItems.reduce(
+    (sum, entry) => sum + Math.max(0, Math.floor(Number(entry.quantity) || 0)),
+    0
+  );
   return Math.floor(purchasedQuantity / promotion.buy) * promotion.get;
 }
 
@@ -171,22 +211,24 @@ function renderCartItems(items) {
   }
 
   return items.map((item) => {
-    const giftQuantity = getManualGiftQuantity(item);
+    const cartKey = getCartItemKey(item);
+    const giftQuantity = getManualGiftQuantity(item, items);
     return `
-      <article class="cart-item" data-cart-item="${escapeHTML(item.id)}">
+      <article class="cart-item" data-cart-item="${escapeHTML(cartKey)}">
         <img src="${escapeHTML(item.image || "assets/product-placeholder.svg")}" alt="${escapeHTML(item.name)}" onerror="this.src='assets/product-placeholder.svg'">
         <div>
           <h3>${escapeHTML(item.name)}</h3>
           <p class="muted">${escapeHTML(item.spec || item.category || "")}</p>
+          ${item.variant ? `<p class="muted">款式：${escapeHTML(item.variant)}</p>` : ""}
           <p class="price">${formatCurrency(item.price)} <span class="muted">x ${item.quantity}</span></p>
           ${giftQuantity > 0 ? `<p class="muted">🎁 符合買五送一，出貨加贈 ${giftQuantity} 件（贈品不計價）</p>` : ""}
           <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px">
             <div class="quantity-control" aria-label="${escapeHTML(item.name)} 數量">
-              <button type="button" data-cart-decrease="${escapeHTML(item.id)}" aria-label="減少數量">-</button>
+              <button type="button" data-cart-decrease="${escapeHTML(cartKey)}" aria-label="減少數量">-</button>
               <span>${item.quantity}</span>
-              <button type="button" data-cart-increase="${escapeHTML(item.id)}" aria-label="增加數量">+</button>
+              <button type="button" data-cart-increase="${escapeHTML(cartKey)}" aria-label="增加數量">+</button>
             </div>
-            <button class="btn btn--ghost btn--small" type="button" data-cart-remove="${escapeHTML(item.id)}">刪除</button>
+            <button class="btn btn--ghost btn--small" type="button" data-cart-remove="${escapeHTML(cartKey)}">刪除</button>
             <strong style="margin-left:auto">${formatCurrency(item.price * item.quantity)}</strong>
           </div>
         </div>
@@ -214,16 +256,16 @@ export function initCartPage() {
     const increase = event.target.closest("[data-cart-increase]");
     const remove = event.target.closest("[data-cart-remove]");
     if (decrease) {
-      const id = decrease.dataset.cartDecrease;
-      const item = getCartItems().find((entry) => entry.id === id);
-      if (item && item.quantity <= 1) removeCartItem(id);
-      else changeCartQuantity(id, (item?.quantity || 1) - 1);
+      const cartKey = decrease.dataset.cartDecrease;
+      const item = getCartItems().find((entry) => getCartItemKey(entry) === cartKey);
+      if (item && item.quantity <= 1) removeCartItem(cartKey);
+      else changeCartQuantity(cartKey, (item?.quantity || 1) - 1);
       paint();
     }
     if (increase) {
-      const id = increase.dataset.cartIncrease;
-      const item = getCartItems().find((entry) => entry.id === id);
-      changeCartQuantity(id, (item?.quantity || 1) + 1);
+      const cartKey = increase.dataset.cartIncrease;
+      const item = getCartItems().find((entry) => getCartItemKey(entry) === cartKey);
+      changeCartQuantity(cartKey, (item?.quantity || 1) + 1);
       paint();
     }
     if (remove) {
