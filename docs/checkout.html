@@ -47,11 +47,7 @@
               </select>
               <p class="payment-method-note is-hidden" id="payment-method-note"></p>
             </div>
-            <div class="form-field form-field--full">
-              <label for="customer-note">商品／贈品備註（選填）</label>
-              <textarea id="customer-note" placeholder="例如：贈品希望草莓口味、黑色款；若缺貨可接受其他款式"></textarea>
-              <span class="muted">可填寫贈品口味、款式、規格或其他訂單需求，實際仍以現貨為準。</span>
-            </div>
+            <div class="form-field form-field--full"><label for="customer-note">備註</label><textarea id="customer-note" placeholder="可填商品偏好、面交地點或其他提醒"></textarea></div>
           </div>
           <div class="checkout-agreements">
             <label class="checkbox-field"><input id="agree-preorder" type="checkbox" required><span>我已確認商品為代購或預購商品</span></label>
@@ -117,7 +113,7 @@
     <div id="site-footer"></div>
     <script type="module">
       import { initSiteChrome } from "./js/auth.js?v=202607242329";
-      import { initCheckoutPage } from "./js/checkout.js?v=202607261330";
+      import { initCheckoutPage } from "./js/checkout.js?v=202607252330";
       initSiteChrome("cart");
       initCheckoutPage();
     </script>
