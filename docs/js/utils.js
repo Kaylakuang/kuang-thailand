@@ -93,9 +93,6 @@ export function normalizeProduct(product = {}, index = 0) {
     : [];
   const image = product.image || imageList[0] || "assets/product-placeholder.svg";
   const images = [...new Set([image, ...imageList])];
-  const variants = Array.isArray(product.variants)
-    ? product.variants
-    : String(product.variants || "").split(/\r?\n|,/);
   return {
     id,
     docId: product.docId || id,
@@ -107,7 +104,6 @@ export function normalizeProduct(product = {}, index = 0) {
     price: Number(product.price) || 0,
     originalPrice: Number(product.originalPrice) || 0,
     spec: product.spec || "",
-    variants: [...new Set(variants.map((variant) => String(variant || "").trim()).filter(Boolean))],
     stock: Number(product.stock ?? 0),
     isActive: product.isActive !== false,
     isPreorder: product.isPreorder !== false,
